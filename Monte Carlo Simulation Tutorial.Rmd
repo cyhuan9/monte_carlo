@@ -150,6 +150,7 @@ sd(apply(norm.sim.all.4, 2, sd)) # n = 1000
 So as the n increases, we will get closer to the expected value and the spread will decrease.
 
 ## MC simulation - simple mean and sd from a regression model 
+### We will not cover this section in class, this is for your own knowledge and educational purposes! 
 
 Think of a regression Y = a + bx as Y ~ N(a+b*x, sd)
 
