@@ -1,0 +1,187 @@
+---
+title: "Monte Carlo Simulation Tutorial"
+author: "Suzy An"
+date: "9/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Monte Carlo Simulations
+
+Monte Carlo simulations help to explain the impact of risk and uncertainty in prediction and forecasting models.
+Monte Carlo simulation performs risk analysis by building models of possible results by substituting a range of values—a probability distribution—for any factor that has inherent uncertainty. It then calculates results over and over, each time using a different set of random values from the probability functions. Depending upon the number of uncertainties and the ranges specified for them, a Monte Carlo simulation could involve thousands or tens of thousands of recalculations before it is complete. Monte Carlo simulation produces distributions of possible outcome values.
+
+Simulating data is useful for statistics to understand the concepts of repeated sampling and probability. Additionally, these approaches are useful for making statistical inferences. They often fall under the category of Parametric Bootstrapping (This is based on the assumption that the data comes from a known distribution with unknown parameters, for example a normal continuous distribution) 
+
+*Side note: All plots in this tutorial will be generated using base R. You can plot these using an R package called ggplot2 if you wish. 
+
+## MC simulation - simple mean and sd from distribution
+
+Let's start by generating a single random number from a uniform distribution on [0,1]
+
+```{r single}
+set.seed(1)
+runif(n = 1, min = 0, max = 1)
+## n = 1 means we're generating one number, and we're setting the min and max boundaries
+## The rNameofDist (Name of Distribution) functions generate random numbers based off of the distribution
+```
+
+If we wanted 1000 random numbers we could change our code to be:
+
+```{r thousand}
+set.seed(1)
+runif(n = 1000, min = 0, max = 1)
+
+runif(n = 1000) ## This can also work because the default settings for min and max are 0 and 1.
+```
+
+If we plotted a histogram of this data, what would it look like? 
+
+```{r hist}
+set.seed(1)
+random.uniform.1000 <- runif(n = 1000, min = 0, max = 1)
+
+hist(random.uniform.1000) ##Calls the histogram function
+##It should look like a uniform distribution between 0 and 1
+```
+
+If we wanted to look at 100 draws from a normal distribution with a mean = 5 and standard deviation (SD) = 2:
+```{r normal}
+set.seed(1)
+random.normal.100 <- rnorm(n = 100, mean = 5, sd = 2)
+par(mfrow = c(3,1)) # This (par) allows us to modify low-level plotting functions. Here we have changed the graphical device (the palette) to have 3 rows and 1 column, so we can put 3 plots on it 
+
+plot(random.normal.100)
+boxplot(random.normal.100)
+hist(random.normal.100)
+
+
+##Let's look at some summary statistics from the simulation 
+mean(random.normal.100)
+sd(random.normal.100)
+
+## While the mean and sd are close to the values we inputted, they are not exactly 5 and 2. Why? 
+```
+
+If we repeat the experiment multiple times: 
+```{r normal.multiple}
+set.seed(1)
+random.normal.100.1 <- rnorm(n = 100, mean = 5, sd = 2)
+random.normal.100.2 <- rnorm(n = 100, mean = 5, sd = 2)
+random.normal.100.3 <- rnorm(n = 100, mean = 5, sd = 2)
+random.normal.100.4 <- rnorm(n = 100, mean = 5, sd = 2)
+
+## Let's plot the histograms of these 4 experiments
+par(mfrow = c(2,2))
+hist(random.normal.100.1)
+hist(random.normal.100.2)
+hist(random.normal.100.3)
+hist(random.normal.100.4)
+## Why do you think the histograms are different from each other? 
+## The distributions are different because although they're generated from the normal distribution, they are each an independent draw of 100 observations.
+
+## Let's calculate the mean of these 4 experiments
+mean(random.normal.100.1)
+mean(random.normal.100.2)
+mean(random.normal.100.3)
+mean(random.normal.100.4)
+## Again, the means are different. They are all reasonably close to 5 but not exactly 5.
+```
+
+We can make the repeated experiment more efficient by using the replicate function 
+```{r replicate}
+set.seed(1)
+random.normal.100.rep <- replicate(n = 4, rnorm(n = 100, mean = 5, sd = 2))
+## If you want to replicate the normal distribution of 100 observations more than 4 times, you can change the n = in the replicate function to a different number. 
+
+random.normal.100.rep 
+par(mfrow = c(2,2))
+apply(X = random.normal.100.rep, MARGIN = 2, FUN = hist) 
+## Using the basic apply function to repeat the call to hist, by columns (MARGIN = 2). Along rows would be (MARGIN = 1).
+
+apply(X = random.normal.100.rep, MARGIN = 2, FUN = mean) 
+## Using the basic apply function to repeat the call to mean, by columns (MARGIN = 2). Along rows would be (MARGIN = 1).
+
+## If you order the arguments correctly, you don't need to specify the names of the arguments 
+apply(random.normal.100.rep, 2, sd) 
+
+## The advantage of using this approach is that you can get the summary statistics quickly by doing this: 
+summary(random.normal.100.rep)
+```
+
+Let's start thinking about the spread of our experimental trials. Each of those 100 draws from a single distribution is one experimental trial. If we imagine a bag of beans that each has a number on it and we pull out 100 beans from the bag. Once we reach 100, we put everything back, shake it up again and start our next trial of 100 beans. How much variation will we see between the 4 experimental trials? 
+```{r replicate.spread}
+sd(apply(random.normal.100.rep, 2, mean)) 
+## We're asking here what's the standard deviation between the 4 means we calculated
+```
+
+Let's repeat this experiment with a smaller sample size or a lower draw size of 25 instead of 100. What happens to the spread? 
+```{r replicate.25}
+norm.sim.all.3 <- replicate(n = 4, rnorm (25, 5, 2)) ## The n of the rnorm has changed to 25
+summary(norm.sim.all.3)
+apply(norm.sim.all.3, 2, sd)
+sd(apply(norm.sim.all.3, 2, mean))
+## Is there more or less variation than what we saw before? 
+```
+
+Let's repeat this experiment with a larger sample size or a higher draw size of 1000 instead of 100. What happens to the spread? 
+```{r replicate.1000}
+norm.sim.all.4 <- replicate(n = 4, rnorm (1000, 5, 2)) ## The n of the rnorm has changed to 1000
+summary(norm.sim.all.4)
+apply(norm.sim.all.4, 2, sd)
+sd(apply(norm.sim.all.4, 2, mean))
+## Is there more or less variation than what we saw before? 
+```
+
+Is there a pattern for the precision of the mean? What about the standard deviation? 
+```{r pattern}
+sd(apply(random.normal.100.rep, 2, mean)) # n = 100
+sd(apply(norm.sim.all.3, 2, mean)) # n = 25
+sd(apply(norm.sim.all.4, 2, mean)) # n = 1000
+
+sd(apply(random.normal.100.rep, 2, sd))# n = 100
+sd(apply(norm.sim.all.3, 2, sd)) # n = 25
+sd(apply(norm.sim.all.4, 2, sd)) # n = 1000
+```
+
+So as the n increases, we will get closer to the expected value and the spread will decrease.
+
+## MC simulation - simple mean and sd from a regression model 
+
+Think of a regression Y = a + bx as Y ~ N(a+b*x, sd)
+
+```{r regression}
+par(mfrow = c(2,2)) ## setting up an empty plot 
+a = 5
+b = 0.7
+x <- seq(2,20) ## This is a sequence of numbers from 2 to 20
+y_fixed <- a + b*x ## This regression model is a linear model. 
+
+plot(y_fixed ~ x, main = "Deterministic Component of the model")
+abline(a = 5, b= 0.7) ## This just draws a straight line through the plot
+```
+
+In general, real data usually has variation in it. So let's add in a standard deviation of 2 (sd = 2)
+
+```{r regression.sd}
+y.sim.1 <- rnorm(length(x), mean = y_fixed, sd = 2) ## The y result is coming from a normal distribution where the mean is the y_fixed with a standard deviation. n = length(x) because the length of x as a sequence is how many draws/numbers it will take 
+plot(y.sim.1 ~ x)
+abline(a = 5, b = 0.7) ## This will draw a line (the expected relationship) based on the paramaters we inputted (5 and 0.7)) - same black line as above 
+
+##But what is the actual parameter estimates(such as the coefficients for the x and the intercept) for the regression? 
+y.sim.1.lm <- lm(y.sim.1 ~ x) ## This is taking all those y values we generated for the x that took into account standard deviation and creating a linear model with the original x 
+summary(y.sim.1.lm) ## Notice the parameter estimates and RSE
+confint(y.sim.1.lm) ## Does it include our expected values in the 95% confidence intervals?
+abline(reg = y.sim.1.lm, lty=2) ## This creates a dotted line on the original plot where this is the estimated values based on simulated data that we just created
+```
+
+The more you start to increase the n of the rnorm function, the more that the dotted line will become aligned better to the black line (smaller spread).
+
+As you keep going through monte carlo simulations, you can then start to write for loops that will run these experiments for you automatically. 
+
+
+
+
